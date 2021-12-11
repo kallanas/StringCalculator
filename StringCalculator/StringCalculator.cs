@@ -1,52 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StringCalculator
 {
-    public class StringCalculator
+    public static class StringCalculator
     {
-        public int Add(string numbers)
+        private static int MaxNumberAllowed = 1000;
+
+        public static int Add(string numbers)
         {
-            if (numbers == "")
-                return 0;
-
-            var delimiter = ',';
-
-            if (numbers.StartsWith('/'))
+            if (string.IsNullOrWhiteSpace(numbers))
             {
-                delimiter = Convert.ToChar(numbers.Substring(2, 1));
-                numbers = numbers.Substring(4);
+                return default;
             }
 
-            var arrayOfNumbers = numbers.Split(delimiter, '\n');
-            var convertedList = new List<int>(); 
+            var delimiterResult = DelimiterParser.Parse(numbers);
 
-            foreach (var strNumber in arrayOfNumbers)
+            var parsedNumbers = delimiterResult.Numbers
+                .Split(delimiterResult.Delimiters, StringSplitOptions.RemoveEmptyEntries)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => int.Parse(n))
+                .ToList();
+
+            ValidateForNegativeNumbers(parsedNumbers);
+
+            var filteredNumbers = FilterLessThanMaxAllowed(parsedNumbers);
+
+            return filteredNumbers.Sum();
+        }
+
+        private static List<int> FilterLessThanMaxAllowed(List<int> numbers)
+        {
+            return numbers
+                .Where(n => n <= MaxNumberAllowed)
+                .ToList();
+        }
+
+        private static void ValidateForNegativeNumbers (List<int> numbers)
+        {
+            var negativeNumbers = numbers
+                .Where(n => n < 0)
+                .ToArray();
+
+            if (negativeNumbers.Any())
             {
-                var number = int.Parse(strNumber);
-                convertedList.Add(number);
+                throw new NegativesNotAllowedException($"Negatives not allowed: {string.Join(",", negativeNumbers)}");
             }
-
-            var sum = 0;
-            var negatives = new List<int>();
-
-            foreach (var number in convertedList)
-            {
-                if (number < 0)
-                    negatives.Add(number);
-
-                if (number <= 1000)
-                    sum += number;
-            }
-
-            if (!negatives.Any())
-                return sum;
-            else
-                throw new Exception($"negatives not allowed - {string.Join(",", negatives)}");
-            
         }
     }
 }
